@@ -9,8 +9,7 @@ const camera = require('regl-camera')(regl, {
   center: [0, 2.5, 0]
 })
 
-window.pad =pad
-frame = pad(10, '0', "0").replace('pad', '')
+
 
 // s3 = ('xxx', frame)
 // const url= `https://s3.amazonaws.com/3d-testing/velodyne_points/data/${frame}.txt`
@@ -36,24 +35,29 @@ withinBB = (point) => {
       point[2] < max[2]
   )
 }
+let buildUrl = (n) => {
+  let source = 'https://s3.amazonaws.com/3d-testing/data/xxx.bin'
+  frame = pad(10, n, "0").replace('pad', '')
+  return source.replace('xxx', frame)
+}
+
+let loadFrame = (n, cb) => {
+  var oReq = new XMLHttpRequest();
+  oReq.open("GET", buildUrl(n), true);
+  oReq.responseType = "arraybuffer";
+  var byteArray
+  oReq.onload = function (oEvent) {
+    var arrayBuffer = oReq.response;
+    if (arrayBuffer) {
+      byteArray = new Float32Array(arrayBuffer)
+      cb(byteArray)
+    }
+  };
+  oReq.send(null);
+}
 
 
 
-
-let source = '/2011_09_28/2011_09_28_drive_0016_sync/velodyne_points/data/'
-frame = '0000000185.bin'
-var oReq = new XMLHttpRequest();
-oReq.open("GET", source + frame, true);
-oReq.responseType = "arraybuffer";
-var byteArray 
-oReq.onload = function (oEvent) {
-  var arrayBuffer = oReq.response; 
-  if (arrayBuffer) {
-    byteArray = new Float32Array(arrayBuffer)
-    draw(byteArray)
-  }
-};
-oReq.send(null);
 
 let drawImg = () =>  {
   let src = '/2011_09_28/2011_09_28_drive_0016_sync/image_00/data/'  
@@ -70,29 +74,38 @@ const VERT_SIZE = 4 * (4 + 3)
 
 e = {}
 draw = (byteArray) => {
-  window.data = byteArray
-  const buf = (Array(NUM_POINTS).fill().map(function (d, i) {
-    const color = hsv2rgb(Math.random() * 360, 0.6, 1)
-
-    const w = byteArray[i*4+3]
-
-    e[w] = true
-    //if (w < 0) return false
-    if (! withinBB([byteArray[i*4],
-                  byteArray[i*4+1],
-                  byteArray[i*4+2]]))
-            return [
+  let transformByteArray = (byteArray) => {
+    console.log(byteArray[0])    
+    return (Array(NUM_POINTS).fill().map(function (d, i) {
+      const color = hsv2rgb(Math.random() * 360, 0.6, 1)
+      // const w = byteArray[i*4+3]
+      // e[w] = true
+      return [
         byteArray[i*4],
         byteArray[i*4+1],
         byteArray[i*4+2],
         0,
-        i / 1e4, color[1] / 255, color[2] / 255
+        i / 1e5, color[1] / 255, color[2] / 255
       ]
-  }).filter((d) => { return d }))
+    }).filter((d) => { return d }))
+  }
+
+  const buf = transformByteArray(byteArray)
   const pointBuffer = regl.buffer(buf);
   window.x = buf
+  window.y = pointBuffer
 
-  
+  document.querySelector('input').addEventListener('change', (e) => {
+    let n = + e.target.value
+    console.log(n)
+    let cb = (byteArray) => {
+      pointBuffer(transformByteArray(byteArray))
+      //drawParticles()
+
+    }
+    loadFrame(n, cb)
+  })
+
   const drawParticles = regl({
     vert: `
   precision mediump float;
@@ -149,14 +162,14 @@ draw = (byteArray) => {
       time: ({tick}) => tick * 0.001
     },
 
-    count: x.length ,
+    count: buf.length,
 
     primitive: 'points'
   })
 
   regl.frame(() => {
     camera((state) => {
-      if (!state.dirty) return;
+      //if (!state.dirty) return;
       regl.clear({color: [0, 0, 0, 1]})
       drawParticles()
     })
@@ -164,3 +177,5 @@ draw = (byteArray) => {
   })
 
 }
+
+loadFrame(0, draw)

@@ -3,16 +3,23 @@ const mat4 = require('gl-mat4')
 const hsv2rgb = require('hsv2rgb')
 
 const requestCSV = require('d3-request').text
+const pad = require('pad')
 
 const camera = require('regl-camera')(regl, {
   center: [0, 2.5, 0]
 })
 
-requestCSV('https://s3.amazonaws.com/3d-testing/velodyne_points/data/0000000000.txt', (err, data) => {
-  let rows = data.split(' ').map(parseFloat)
+window.pad =pad
+frame = pad(10, '0', "0").replace('pad', '')
+
+// s3 = ('xxx', frame)
+// const url= `https://s3.amazonaws.com/3d-testing/velodyne_points/data/${frame}.txt`
+// console.log(url)
+// requestCSV(url, (err, data) => {
+//   let rows = data.split(' ').map(parseFloat)
   
-  draw(rows)
-})
+//   draw(rows)
+// })
 
 
 min = [-3.40282, -3.40282, -3.40282]
@@ -33,20 +40,20 @@ withinBB = (point) => {
 
 
 
-// let source = '/2011_09_28/2011_09_28_drive_0016_sync/velodyne_points/data/'
-// frame = '0000000185.bin'
-// var oReq = new XMLHttpRequest();
-// oReq.open("GET", source + frame, true);
-// oReq.responseType = "arraybuffer";
-// var byteArray 
-// oReq.onload = function (oEvent) {
-//   var arrayBuffer = oReq.response; 
-//   if (arrayBuffer) {
-//     byteArray = new Float32Array(arrayBuffer)
-//     draw(byteArray)
-//   }
-// };
-// oReq.send(null);
+let source = '/2011_09_28/2011_09_28_drive_0016_sync/velodyne_points/data/'
+frame = '0000000185.bin'
+var oReq = new XMLHttpRequest();
+oReq.open("GET", source + frame, true);
+oReq.responseType = "arraybuffer";
+var byteArray 
+oReq.onload = function (oEvent) {
+  var arrayBuffer = oReq.response; 
+  if (arrayBuffer) {
+    byteArray = new Float32Array(arrayBuffer)
+    draw(byteArray)
+  }
+};
+oReq.send(null);
 
 let drawImg = () =>  {
   let src = '/2011_09_28/2011_09_28_drive_0016_sync/image_00/data/'  
@@ -71,15 +78,15 @@ draw = (byteArray) => {
 
     e[w] = true
     //if (w < 0) return false
-    // if (withinBB([byteArray[i*4],
-    //               byteArray[i*4+1],
-    //               byteArray[i*4+2]]))
-      return [
+    if (! withinBB([byteArray[i*4],
+                  byteArray[i*4+1],
+                  byteArray[i*4+2]]))
+            return [
         byteArray[i*4],
         byteArray[i*4+1],
         byteArray[i*4+2],
         0,
-        color[0] / 255, color[1] / 255, color[2] / 255
+        i / 1e4, color[1] / 255, color[2] / 255
       ]
   }).filter((d) => { return d }))
   const pointBuffer = regl.buffer(buf);
@@ -126,23 +133,23 @@ draw = (byteArray) => {
     },
 
     uniforms: {
-      view: ({tick}) => {
-        const t = 0.01 * tick
-        return mat4.lookAt([],
-                           [30 * Math.cos(t), 2.5, 30 * Math.sin(t)],
-                           [0, 0, 0],
-                           [0, 1, 0])
-      },
-      projection: ({viewportWidth, viewportHeight}) =>
-        mat4.perspective([],
-                         Math.PI / 4,
-                         viewportWidth / viewportHeight,
-                         0.01,
-                         1000),
+      // view: ({tick}) => {
+      //   const t = 0.1 * tick
+      //   return mat4.lookAt([],
+      //                      [3 * Math.cos(t), 2.5, 3 * Math.sin(t)],
+      //                      [0, 0, 0],
+      //                      [0, 1, 0])
+      // },
+      // projection: ({viewportWidth, viewportHeight}) =>
+      //   mat4.perspective([],
+      //                    Math.PI / 2,
+      //                    viewportWidth / viewportHeight,
+      //                    0.01,
+      //                    1000),
       time: ({tick}) => tick * 0.001
     },
 
-    count: NUM_POINTS,
+    count: x.length ,
 
     primitive: 'points'
   })

@@ -8,18 +8,13 @@ const pad = require('pad')
 const camera = require('regl-camera')(regl, {
   center: [0, 2.5, 0]
 })
-
-
-
 // s3 = ('xxx', frame)
 // const url= `https://s3.amazonaws.com/3d-testing/velodyne_points/data/${frame}.txt`
 // console.log(url)
 // requestCSV(url, (err, data) => {
 //   let rows = data.split(' ').map(parseFloat)
-  
 //   draw(rows)
 // })
-
 
 min = [-3.40282, -3.40282, -3.40282]
 max = [3.40282, 3.40282, 3.40282]
@@ -56,11 +51,8 @@ let loadFrame = (n, cb) => {
   oReq.send(null);
 }
 
-
-
-
 let drawImg = () =>  {
-  let src = '/2011_09_28/2011_09_28_drive_0016_sync/image_00/data/'  
+  let src = '/2011_09_28/2011_09_28_drive_0016_sync/image_00/data/'
   let img = document.querySelector('img')
   img.src = src + '0000000151.png'
   img.src = 'https://s3.amazonaws.com/3d-testing/image_01/data/0000000002.png'
@@ -71,11 +63,10 @@ drawImg()
 const NUM_POINTS = 1.2e5
 const VERT_SIZE = 4 * (4 + 3)
 
-
 e = {}
 draw = (byteArray) => {
   let transformByteArray = (byteArray) => {
-    console.log(byteArray[0])    
+    console.log(byteArray[0])
     return (Array(NUM_POINTS).fill().map(function (d, i) {
       const color = hsv2rgb(Math.random() * 360, 0.6, 1)
       // const w = byteArray[i*4+3]
